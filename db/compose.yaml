@@ -1,0 +1,24 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: try-codex-mysql
+    environment:
+      MYSQL_DATABASE: book_app
+      MYSQL_USER: book_app
+      MYSQL_PASSWORD: book_app_password
+      MYSQL_ROOT_PASSWORD: root_password
+      TZ: Asia/Tokyo
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u$${MYSQL_USER} -p$${MYSQL_PASSWORD} --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  mysql-data:

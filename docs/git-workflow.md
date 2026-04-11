@@ -15,6 +15,7 @@ git switch -c feature/<name>
 ```
 
 作業後は GitHub Pull Request を作成し、`feature/<name>` から `develop` に merge します。
+ローカルで PR merge 相当の merge は行わず、GitHub 上の PR merge を正とします。
 
 ## Project startup order
 
@@ -26,7 +27,11 @@ git switch -c feature/<name>
 ## Session boundaries
 
 - Session 1: `main` で Git 初期化と初回コミット。
-- Session 2: `develop` 作成と `feature/api` 実装。
-- Session 3: `feature/api` merge 後の `develop` 確認。
-- Session 4: `feature/front` 実装と PR 作成。
+- Session 2: `develop` 作成と `feature/api` 実装、PR 作成準備。
+- Session 3: GitHub 上で `feature/api` が merge 済みになった後、`develop` を pull して確認。
+- Session 4: 別セッションで `develop` から `feature/front` を作成し、フロントエンドを実装。
 
+## Important rule
+
+`feature/api` 完了後は、ローカルで `develop` に merge しません。
+GitHub 上で `feature/api` から `develop` への Pull Request を作成し、PR merge 後に次セッションで `develop` を最新化します。

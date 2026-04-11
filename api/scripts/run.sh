@@ -3,9 +3,10 @@ set -eu
 
 cd "$(dirname "$0")/.."
 
-rm -rf build/classes
-mkdir -p build/classes
+if [ -x ./gradlew ]; then
+  GRADLE=./gradlew
+else
+  GRADLE=gradle
+fi
 
-javac -d build/classes $(find src/main/java -name '*.java')
-java -cp build/classes com.example.api.Main
-
+exec "$GRADLE" run

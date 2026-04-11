@@ -3,10 +3,9 @@ set -eu
 
 cd "$(dirname "$0")/.."
 
-if [ -x ./gradlew ]; then
-  GRADLE=./gradlew
-else
-  GRADLE=gradle
+if [ ! -x ./gradlew ]; then
+  echo "error: ./gradlew is required. Run this script from a checkout that includes the Gradle Wrapper." >&2
+  exit 1
 fi
 
-exec "$GRADLE" run
+exec ./gradlew run

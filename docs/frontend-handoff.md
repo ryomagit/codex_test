@@ -1,6 +1,7 @@
 # Frontend handoff
 
 `feature/front` は GitHub 上で `feature/api` が `develop` に merge された後、別セッションで開始します。
+作業開始時に `docs/api-handoff.md` を読み、API 側の Jersey + Google Guice 構成を変更しないでください。
 
 ## Branch start
 
@@ -54,4 +55,3 @@ export default {
 - API health の表示
 - `/api/hello` の結果表示
 - 読み込み中、成功、失敗の状態表示
-

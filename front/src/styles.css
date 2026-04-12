@@ -44,14 +44,17 @@ button:focus-visible {
 }
 
 button.secondary,
-.mode-switch button {
+.mode-switch button,
+.view-nav button {
   color: #17312b;
   background: #e6f0bb;
 }
 
 button.secondary:hover,
 .mode-switch button:hover,
-.mode-switch button.active {
+.mode-switch button.active,
+.view-nav button:hover,
+.view-nav button.active {
   color: #ffffff;
   background: #5f7f1f;
 }
@@ -123,13 +126,24 @@ p {
   padding: 32px 0 56px;
 }
 
-.top-band {
+.app-header {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(240px, 360px);
   gap: 24px;
   align-items: end;
   min-height: 260px;
   padding: 28px 0 44px;
+}
+
+.brand-block {
+  display: grid;
+  gap: 1rem;
+}
+
+.brand-block p:not(.eyebrow) {
+  max-width: 680px;
+  margin: 0;
+  color: #40534e;
 }
 
 .book-card,
@@ -140,7 +154,8 @@ p {
   box-shadow: 0 16px 36px rgba(23, 49, 43, 0.08);
 }
 
-.session-panel {
+.account-strip,
+.auth-panel {
   display: grid;
   gap: 1rem;
   border-left: 4px solid #137f68;
@@ -148,9 +163,41 @@ p {
   padding: 1.2rem;
 }
 
+.auth-panel {
+  border-top: 1px solid rgba(23, 49, 43, 0.16);
+  border-left: 0;
+  margin: 0 0 20px;
+}
+
+.auth-layout {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
 .session-name {
   margin: 0;
   font-weight: 800;
+}
+
+.view-nav {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  margin: 0 0 20px;
+  padding: 0.7rem 0;
+  background: rgba(247, 249, 243, 0.92);
+  backdrop-filter: blur(8px);
+}
+
+.view-section {
+  display: grid;
+  gap: 20px;
 }
 
 .status {
@@ -378,7 +425,8 @@ p {
     padding-top: 20px;
   }
 
-  .top-band,
+  .app-header,
+  .auth-layout,
   .grid.two,
   .grid.detail-layout,
   .row-heading,
@@ -387,7 +435,7 @@ p {
     grid-template-columns: 1fr;
   }
 
-  .top-band {
+  .app-header {
     min-height: 220px;
   }
 

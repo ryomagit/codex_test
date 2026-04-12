@@ -2,6 +2,8 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 
 const authMode = ref('login')
+const authPanelOpen = ref(false)
+const activeView = ref('discover')
 const authForm = reactive({
   email: '',
   password: '',
@@ -36,6 +38,12 @@ const state = reactive({
 const isLoggedIn = computed(() => Boolean(state.user))
 const selectedGenreIds = computed(() => new Set(bookSearch.selectedGenreIds.map(Number)))
 const favoriteIds = computed(() => new Set(state.favorites.map((book) => book.id)))
+const navItems = computed(() => [
+  { id: 'discover', label: '探す' },
+  { id: 'library', label: '読む' },
+  { id: 'people', label: 'ユーザー' },
+  ...(state.selectedBook ? [{ id: 'detail', label: '詳細' }] : []),
+])
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -113,6 +121,7 @@ async function submitAuth() {
   )
   if (result?.user) {
     state.user = result.user
+    authPanelOpen.value = false
     authForm.password = ''
     await loadFavorites()
   }
@@ -129,6 +138,7 @@ async function logout() {
   )
   state.user = null
   state.favorites = []
+  authPanelOpen.value = true
 }
 
 async function searchBooks() {
@@ -175,6 +185,7 @@ async function saveBook(book) {
 async function selectBook(book) {
   const detail = book.id ? await run('book', () => api(`/api/books/${book.id}`)) : null
   state.selectedBook = detail ?? book
+  activeView.value = 'detail'
   await loadReviews()
   reviewForm.rating = 5
   reviewForm.body = ''
@@ -306,7 +317,13 @@ async function unfollowUser(user) {
 
 async function searchByTag(tag) {
   bookSearch.q = tag.name
+  activeView.value = 'discover'
   await searchBooks()
+}
+
+function showAuth(mode = 'login') {
+  authMode.value = mode
+  authPanelOpen.value = true
 }
 
 function joinAuthors(book) {
@@ -329,30 +346,58 @@ onMounted(async () => {
 
 <template>
   <main class="app-shell">
-    <section class="top-band">
-      <div>
+    <header class="app-header">
+      <div class="brand-block">
         <p class="eyebrow">Programmer Books</p>
         <h1>技術書を探して、読書ログを育てる。</h1>
-      </div>
-      <div class="session-panel">
-        <p v-if="state.user" class="session-name">
-          {{ state.user.displayName }} でログイン中
+        <p>
+          検索、ランキング、お気に入り、レビューを一つの流れで扱えます。
         </p>
-        <p v-else class="session-name">ログインしてお気に入りとレビューを保存</p>
-        <button v-if="state.user" type="button" @click="logout">ログアウト</button>
       </div>
-    </section>
+
+      <div class="account-strip">
+        <div>
+          <p class="eyebrow">Account</p>
+          <p v-if="state.user" class="session-name">{{ state.user.displayName }} でログイン中</p>
+          <p v-else class="session-name">ログインすると記録を保存できます</p>
+        </div>
+        <div class="actions">
+          <button v-if="state.user" type="button" class="secondary" @click="logout">
+            ログアウト
+          </button>
+          <template v-else>
+            <button type="button" @click="showAuth('login')">ログイン</button>
+            <button type="button" class="secondary" @click="showAuth('register')">登録</button>
+          </template>
+        </div>
+      </div>
+    </header>
+
+    <nav class="view-nav" aria-label="主要画面">
+      <button
+        v-for="item in navItems"
+        :key="item.id"
+        :class="{ active: activeView === item.id }"
+        type="button"
+        @click="activeView = item.id"
+      >
+        {{ item.label }}
+      </button>
+    </nav>
 
     <p v-if="state.loading" class="status">読み込み中...</p>
     <p v-if="state.notice" class="status success">{{ state.notice }}</p>
     <p v-if="state.error" class="status error">{{ state.error }}</p>
 
-    <section class="grid two">
-      <div class="panel">
-        <div class="panel-heading">
+    <section v-if="authPanelOpen && !state.user" class="auth-panel">
+      <div class="panel-heading row-heading">
+        <div>
           <p class="eyebrow">Account</p>
-          <h2>アカウント</h2>
+          <h2>{{ authMode === 'register' ? 'アカウント登録' : 'ログイン' }}</h2>
         </div>
+        <button type="button" class="secondary" @click="authPanelOpen = false">閉じる</button>
+      </div>
+      <div class="auth-layout">
         <div class="mode-switch">
           <button :class="{ active: authMode === 'login' }" type="button" @click="authMode = 'login'">
             ログイン
@@ -387,7 +432,9 @@ onMounted(async () => {
           <button type="submit">{{ authMode === 'register' ? '登録する' : 'ログインする' }}</button>
         </form>
       </div>
+    </section>
 
+    <section v-show="activeView === 'discover'" class="view-section">
       <div class="panel">
         <div class="panel-heading">
           <p class="eyebrow">Discovery</p>
@@ -412,33 +459,36 @@ onMounted(async () => {
           <button type="submit">検索する</button>
         </form>
       </div>
-    </section>
 
-    <section class="panel">
-      <div class="panel-heading row-heading">
-        <div>
-          <p class="eyebrow">Results</p>
-          <h2>検索結果</h2>
-        </div>
-        <p>{{ state.searchResults.length }} 件</p>
-      </div>
-      <div class="book-grid">
-        <article v-for="book in state.searchResults" :key="book.googleVolumeId" class="book-card">
-          <img v-if="book.thumbnailUrl" :src="book.thumbnailUrl" :alt="book.title" />
-          <div v-else class="cover-fallback">画像なし</div>
+      <div class="panel">
+        <div class="panel-heading row-heading">
           <div>
-            <h3>{{ book.title }}</h3>
-            <p>{{ joinAuthors(book) }}</p>
-            <p class="muted">{{ book.publisher || '出版社未設定' }} / {{ book.publishedDate || '刊行日未設定' }}</p>
-            <div class="actions">
-              <button type="button" @click="saveBook(book)">保存して詳細へ</button>
-            </div>
+            <p class="eyebrow">Results</p>
+            <h2>検索結果</h2>
           </div>
-        </article>
+          <p>{{ state.searchResults.length }} 件</p>
+        </div>
+        <div class="book-grid">
+          <article v-for="book in state.searchResults" :key="book.googleVolumeId" class="book-card">
+            <img v-if="book.thumbnailUrl" :src="book.thumbnailUrl" :alt="book.title" />
+            <div v-else class="cover-fallback">画像なし</div>
+            <div>
+              <h3>{{ book.title }}</h3>
+              <p>{{ joinAuthors(book) }}</p>
+              <p class="muted">
+                {{ book.publisher || '出版社未設定' }} /
+                {{ book.publishedDate || '刊行日未設定' }}
+              </p>
+              <div class="actions">
+                <button type="button" @click="saveBook(book)">保存して詳細へ</button>
+              </div>
+            </div>
+          </article>
+        </div>
       </div>
     </section>
 
-    <section v-if="state.selectedBook" class="grid detail-layout">
+    <section v-show="activeView === 'detail'" v-if="state.selectedBook" class="grid detail-layout">
       <div class="panel">
         <div class="book-detail">
           <img
@@ -496,7 +546,9 @@ onMounted(async () => {
               >
                 お気に入りから削除
               </button>
-              <span v-if="!isLoggedIn" class="muted">ログインすると保存できます。</span>
+              <button v-if="!isLoggedIn" type="button" class="secondary" @click="showAuth('login')">
+                ログインして保存
+              </button>
             </div>
           </div>
         </div>
@@ -525,7 +577,9 @@ onMounted(async () => {
             <button type="button" class="secondary" @click="deleteReview">自分のレビューを削除</button>
           </div>
         </form>
-        <p v-else class="muted">ログインするとレビューできます。</p>
+        <button v-else type="button" class="secondary" @click="showAuth('login')">
+          ログインしてレビューする
+        </button>
         <article v-for="review in state.reviews" :key="review.id" class="list-item">
           <h3>{{ review.user.displayName }} / 星 {{ review.rating }}</h3>
           <p>{{ review.body || '本文なし' }}</p>
@@ -534,14 +588,16 @@ onMounted(async () => {
       </div>
     </section>
 
-    <section class="grid two">
+    <section v-show="activeView === 'library'" class="grid two">
       <div class="panel">
         <div class="panel-heading">
           <p class="eyebrow">Favorites</p>
           <h2>お気に入り</h2>
         </div>
         <button v-if="isLoggedIn" type="button" class="secondary" @click="loadFavorites">更新</button>
-        <p v-else class="muted">ログインすると一覧を表示します。</p>
+        <button v-else type="button" class="secondary" @click="showAuth('login')">
+          ログインして一覧を表示
+        </button>
         <article v-for="book in state.favorites" :key="book.id" class="list-item compact">
           <h3>{{ book.title }}</h3>
           <p>{{ joinAuthors(book) }}</p>
@@ -576,7 +632,7 @@ onMounted(async () => {
       </div>
     </section>
 
-    <section class="panel">
+    <section v-show="activeView === 'people'" class="panel">
       <div class="panel-heading row-heading">
         <div>
           <p class="eyebrow">People</p>
@@ -597,6 +653,9 @@ onMounted(async () => {
           <div class="actions">
             <button type="button" class="secondary" @click="loadUser(user.id)">プロフィール</button>
             <button v-if="isLoggedIn" type="button" @click="followUser(user)">フォロー</button>
+            <button v-else type="button" class="secondary" @click="showAuth('login')">
+              ログインしてフォロー
+            </button>
           </div>
         </article>
       </div>

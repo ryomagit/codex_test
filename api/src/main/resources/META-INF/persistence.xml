@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd"
+        version="3.1">
+    <persistence-unit name="book-app" transaction-type="RESOURCE_LOCAL">
+        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+        <class>com.example.api.entity.BookAuthorEntity</class>
+        <class>com.example.api.entity.BookEntity</class>
+        <class>com.example.api.entity.BookGenreEntity</class>
+        <class>com.example.api.entity.BookTagEntity</class>
+        <class>com.example.api.entity.FavoriteEntity</class>
+        <class>com.example.api.entity.GenreEntity</class>
+        <class>com.example.api.entity.RecommendationListEntity</class>
+        <class>com.example.api.entity.RecommendationListItemEntity</class>
+        <class>com.example.api.entity.ReviewEntity</class>
+        <class>com.example.api.entity.SessionEntity</class>
+        <class>com.example.api.entity.TagEntity</class>
+        <class>com.example.api.entity.UserEntity</class>
+        <class>com.example.api.entity.UserFollowEntity</class>
+        <class>com.example.api.entity.UserProfileEntity</class>
+        <exclude-unlisted-classes>false</exclude-unlisted-classes>
+        <properties>
+            <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
+            <property name="eclipselink.weaving" value="false"/>
+            <property name="eclipselink.logging.level" value="WARNING"/>
+        </properties>
+    </persistence-unit>
+</persistence>

@@ -11,6 +11,9 @@
 - 実行とテストはローカルの `gradle` コマンドではなく、必ず `./gradlew` を使います。
 - DB は MySQL + Docker Compose を前提にします。
 - 書籍情報取得元は Google Books API とします。
+- DB アクセスは EclipseLink JPA を使います。
+- 複雑な集計・結合クエリでは QueryDSL を使います。
+- Java ファイル編集後は google-java-format を Spotless 経由で適用します。
 
 ## Do not change
 
@@ -18,6 +21,8 @@
 - 素の `com.sun.net.httpserver.HttpServer` 実装へ戻さない。
 - Guice を外して手動生成だけの構成へ戻さない。
 - `gradle` コマンド前提の手順に戻さない。
+- google-java-format 以外の Java formatter に切り替えない。
+- DB アクセスを JDBC Repository 実装へ戻さない。
 - `feature/api` 完了後にローカルで `develop` へ merge しない。
 - DB を PostgreSQL 前提にしない。
 - DB 関連ファイルを API ディレクトリ直下へ混在させない。DB 基盤は `feature/db` の `db/` 配下で扱う。
@@ -56,6 +61,7 @@ API はデフォルトで `http://localhost:8080` に起動します。
 git status --short --branch
 cd api
 ./gradlew test
+./gradlew spotlessCheck
 ./gradlew run
 ```
 

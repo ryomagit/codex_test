@@ -10,16 +10,18 @@ import jakarta.ws.rs.core.Response;
 
 @Path("/api/hello")
 public final class HelloResource {
-    private final GreetingService greetingService;
+  private final GreetingService greetingService;
 
-    @Inject
-    public HelloResource(GreetingService greetingService) {
-        this.greetingService = greetingService;
-    }
+  @Inject
+  public HelloResource(GreetingService greetingService) {
+    this.greetingService = greetingService;
+  }
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getHello() {
-        return Response.ok("{\"message\":\"" + greetingService.message() + "\"}", MediaType.APPLICATION_JSON).build();
-    }
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getHello() {
+    return Response.ok(
+            "{\"message\":\"" + greetingService.message() + "\"}", MediaType.APPLICATION_JSON)
+        .build();
+  }
 }

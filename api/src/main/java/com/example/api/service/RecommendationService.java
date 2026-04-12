@@ -7,6 +7,7 @@ import com.example.api.model.RecommendationListRecord;
 import com.example.api.repository.RecommendationRepository;
 import com.example.api.security.CurrentUser;
 import com.google.inject.Inject;
+import java.util.List;
 
 public final class RecommendationService {
   private final RecommendationRepository recommendations;
@@ -39,6 +40,13 @@ public final class RecommendationService {
       throw ApiException.forbidden("This recommendation list is private.");
     }
     return Responses.recommendation(list);
+  }
+
+  public List<RecommendationListResponse> listByUser(CurrentUser viewer, long userId) {
+    boolean includePrivate = viewer != null && viewer.id() == userId;
+    return recommendations.listByUser(userId, includePrivate).stream()
+        .map(Responses::recommendation)
+        .toList();
   }
 
   private RecommendationListRequest normalize(RecommendationListRequest request) {

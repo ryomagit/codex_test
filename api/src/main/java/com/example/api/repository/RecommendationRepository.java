@@ -2,6 +2,7 @@ package com.example.api.repository;
 
 import com.example.api.dto.RecommendationDtos.ItemRequest;
 import com.example.api.dto.RecommendationDtos.RecommendationListRequest;
+import com.example.api.entity.QRecommendationListEntity;
 import com.example.api.entity.QRecommendationListItemEntity;
 import com.example.api.entity.RecommendationListEntity;
 import com.example.api.entity.RecommendationListItemEntity;
@@ -86,6 +87,24 @@ public final class RecommendationRepository {
                 .map(list -> map(entityManager, list)));
   }
 
+  public List<RecommendationListRecord> listByUser(long userId, boolean includePrivate) {
+    return jpa.read(
+        entityManager -> {
+          QRecommendationListEntity list = QRecommendationListEntity.recommendationListEntity;
+          List<RecommendationListEntity> lists =
+              new JPAQueryFactory(entityManager)
+                  .select(list)
+                  .from(list)
+                  .where(
+                      includePrivate
+                          ? list.userId.eq(userId)
+                          : list.userId.eq(userId).and(list.visibility.eq("public")))
+                  .orderBy(list.updatedAt.desc(), list.id.desc())
+                  .fetch();
+          return lists.stream().map(row -> map(entityManager, row)).toList();
+        });
+  }
+
   public boolean isOwner(long listId, long userId) {
     return jpa.read(
         entityManager -> {
@@ -128,19 +147,20 @@ public final class RecommendationRepository {
 
   private List<RecommendationItemRecord> items(EntityManager entityManager, long listId) {
     QRecommendationListItemEntity item = QRecommendationListItemEntity.recommendationListItemEntity;
-    return new JPAQueryFactory(entityManager)
+    List<RecommendationListItemEntity> items =
+        new JPAQueryFactory(entityManager)
             .select(item)
             .from(item)
             .where(item.listId.eq(listId))
             .orderBy(item.displayOrder.asc())
-            .fetch()
-            .stream()
-            .map(
-                row ->
-                    new RecommendationItemRecord(
-                        bookRepository.findById(row.getBookId()).orElseThrow(),
-                        row.getComment(),
-                        row.getDisplayOrder()))
-            .toList();
+            .fetch();
+    return items.stream()
+        .map(
+            row ->
+                new RecommendationItemRecord(
+                    bookRepository.findById(row.getBookId()).orElseThrow(),
+                    row.getComment(),
+                    row.getDisplayOrder()))
+        .toList();
   }
 }

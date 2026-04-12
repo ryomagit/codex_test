@@ -1,6 +1,8 @@
 package com.example.api.resource;
 
+import com.example.api.security.CurrentUser;
 import com.example.api.service.AuthService;
+import com.example.api.service.RecommendationService;
 import com.example.api.service.UserService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DELETE;
@@ -18,11 +20,16 @@ import jakarta.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 public final class UserResource {
   private final AuthService authService;
+  private final RecommendationService recommendationService;
   private final UserService userService;
 
   @Inject
-  public UserResource(AuthService authService, UserService userService) {
+  public UserResource(
+      AuthService authService,
+      RecommendationService recommendationService,
+      UserService userService) {
     this.authService = authService;
+    this.recommendationService = recommendationService;
     this.userService = userService;
   }
 
@@ -36,6 +43,15 @@ public final class UserResource {
   @Path("/featured")
   public Response featured() {
     return Response.ok(userService.featured()).build();
+  }
+
+  @GET
+  @Path("/{userId}/recommendation-lists")
+  public Response recommendationLists(
+      @Context HttpHeaders headers, @PathParam("userId") long userId) {
+    userService.get(userId);
+    CurrentUser viewer = authService.authenticate(headers).orElse(null);
+    return Response.ok(recommendationService.listByUser(viewer, userId)).build();
   }
 
   @POST

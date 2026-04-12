@@ -44,6 +44,12 @@ const navItems = computed(() => [
   { id: 'people', label: 'ユーザー' },
   ...(state.selectedBook ? [{ id: 'detail', label: '詳細' }] : []),
 ])
+const canShowEmptyState = computed(() => !state.loading && !state.error)
+const hasSearchResults = computed(() => state.searchResults.length > 0)
+const hasFavorites = computed(() => state.favorites.length > 0)
+const hasReviews = computed(() => state.reviews.length > 0)
+const hasRanking = computed(() => state.ranking.length > 0)
+const hasFeaturedUsers = computed(() => state.featuredUsers.length > 0)
 
 async function api(path, options = {}) {
   const response = await fetch(path, {
@@ -59,7 +65,9 @@ async function api(path, options = {}) {
   const text = await response.text()
   const data = text ? JSON.parse(text) : null
   if (!response.ok) {
-    throw new Error(data?.error?.message ?? 'Request failed.')
+    const error = new Error(data?.error?.message ?? 'Request failed.')
+    error.status = response.status
+    throw error
   }
   return data
 }
@@ -83,7 +91,17 @@ async function run(label, action, successMessage = '') {
 }
 
 async function loadMe() {
-  state.user = await run('me', () => api('/api/auth/me'))
+  state.loading = 'me'
+  try {
+    state.user = await api('/api/auth/me')
+  } catch (error) {
+    state.user = null
+    if (error.status !== 401) {
+      state.error = error.message
+    }
+  } finally {
+    state.loading = ''
+  }
 }
 
 async function loadGenres() {
@@ -451,9 +469,9 @@ onMounted(async () => {
           </label>
           <fieldset>
             <legend>保存時のジャンル</legend>
-            <label v-for="genre in state.genres" :key="genre.id" class="check-row">
+            <label v-for="genre in state.genres" :key="genre.id" class="check-row genre-chip">
               <input v-model="bookSearch.selectedGenreIds" :value="genre.id" type="checkbox" />
-              {{ genre.name }}
+              <span>{{ genre.name }}</span>
             </label>
           </fieldset>
           <button type="submit">検索する</button>
@@ -468,7 +486,7 @@ onMounted(async () => {
           </div>
           <p>{{ state.searchResults.length }} 件</p>
         </div>
-        <div class="book-grid">
+        <div v-if="hasSearchResults" class="book-grid">
           <article v-for="book in state.searchResults" :key="book.googleVolumeId" class="book-card">
             <img v-if="book.thumbnailUrl" :src="book.thumbnailUrl" :alt="book.title" />
             <div v-else class="cover-fallback">画像なし</div>
@@ -484,6 +502,13 @@ onMounted(async () => {
               </div>
             </div>
           </article>
+        </div>
+        <div v-else-if="canShowEmptyState" class="empty-state">
+          <h3>まだ候補がありません</h3>
+          <p>キーワードを変えるか、Java、Python、Architecture などで検索してみてください。</p>
+          <button type="button" class="secondary" @click="bookSearch.q = 'architecture'; searchBooks()">
+            Architecture で探す
+          </button>
         </div>
       </div>
     </section>
@@ -520,7 +545,7 @@ onMounted(async () => {
                 <dd>{{ state.selectedBook.isbn13 || '未設定' }}</dd>
               </div>
             </dl>
-            <div class="tag-row">
+            <div v-if="state.selectedBook.tags?.length" class="tag-row">
               <button
                 v-for="tag in state.selectedBook.tags"
                 :key="tag.id"
@@ -531,6 +556,7 @@ onMounted(async () => {
                 {{ tag.name }}
               </button>
             </div>
+            <p v-else class="muted">タグはまだありません。</p>
             <div class="actions">
               <button
                 v-if="isLoggedIn && !hasFavorite(state.selectedBook)"
@@ -585,6 +611,13 @@ onMounted(async () => {
           <p>{{ review.body || '本文なし' }}</p>
           <p class="muted">{{ review.updatedAt || review.createdAt }}</p>
         </article>
+        <div v-if="!hasReviews && canShowEmptyState" class="empty-state compact-empty">
+          <h3>レビューはまだありません</h3>
+          <p>読んだあとに、評価とメモを残せます。</p>
+          <button v-if="!isLoggedIn" type="button" class="secondary" @click="showAuth('login')">
+            ログインして最初のレビューを書く
+          </button>
+        </div>
       </div>
     </section>
 
@@ -603,6 +636,11 @@ onMounted(async () => {
           <p>{{ joinAuthors(book) }}</p>
           <button type="button" class="secondary" @click="selectBook(book)">詳細へ</button>
         </article>
+        <div v-if="isLoggedIn && !hasFavorites && canShowEmptyState" class="empty-state compact-empty">
+          <h3>お気に入りはまだありません</h3>
+          <p>検索結果から保存した本を開き、お気に入りに追加できます。</p>
+          <button type="button" class="secondary" @click="activeView = 'discover'">本を探す</button>
+        </div>
       </div>
 
       <div class="panel">
@@ -629,6 +667,11 @@ onMounted(async () => {
           </p>
           <button type="button" class="secondary" @click="selectBook(row.book)">詳細へ</button>
         </article>
+        <div v-if="!hasRanking && canShowEmptyState" class="empty-state compact-empty">
+          <h3>ランキングはまだありません</h3>
+          <p>書籍を保存し、お気に入りやレビューが増えるとここに並びます。</p>
+          <button type="button" class="secondary" @click="activeView = 'discover'">検索へ戻る</button>
+        </div>
       </div>
     </section>
 
@@ -643,7 +686,7 @@ onMounted(async () => {
           <button type="submit">表示</button>
         </form>
       </div>
-      <div class="user-grid">
+      <div v-if="hasFeaturedUsers" class="user-grid">
         <article v-for="user in state.featuredUsers" :key="user.id" class="user-card">
           <img v-if="user.avatarUrl" :src="user.avatarUrl" :alt="user.displayName" />
           <div v-else class="avatar-fallback">{{ user.displayName.slice(0, 1) }}</div>
@@ -659,6 +702,13 @@ onMounted(async () => {
           </div>
         </article>
       </div>
+      <div v-else-if="canShowEmptyState" class="empty-state">
+        <h3>ユーザーはまだ見つかりません</h3>
+        <p>登録とフォローが増えると、ここにユーザーが表示されます。</p>
+        <button v-if="!isLoggedIn" type="button" class="secondary" @click="showAuth('register')">
+          アカウントを作る
+        </button>
+      </div>
 
       <article v-if="state.selectedUser" class="profile-panel">
         <h3>{{ state.selectedUser.displayName }}</h3>
@@ -671,6 +721,9 @@ onMounted(async () => {
             フォロー解除
           </button>
         </div>
+        <button v-else type="button" class="secondary" @click="showAuth('login')">
+          ログインしてフォロー
+        </button>
       </article>
     </section>
   </main>

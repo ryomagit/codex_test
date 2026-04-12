@@ -1,6 +1,6 @@
 :root {
-  color: #17312b;
-  background: #f7f9f3;
+  color: #182c30;
+  background: #f7fbfc;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -16,8 +16,8 @@ body {
   margin: 0;
   min-width: 320px;
   background:
-    linear-gradient(180deg, rgba(28, 143, 118, 0.16), rgba(247, 249, 243, 0) 360px),
-    #f7f9f3;
+    linear-gradient(180deg, rgba(0, 168, 204, 0.14), rgba(247, 251, 252, 0) 340px),
+    #f7fbfc;
 }
 
 button,
@@ -33,21 +33,21 @@ button {
   border-radius: 8px;
   padding: 0.75rem 1rem;
   color: #ffffff;
-  background: #137f68;
+  background: #0f9db5;
   cursor: pointer;
   font-weight: 700;
 }
 
 button:hover,
 button:focus-visible {
-  background: #0d624f;
+  background: #087f95;
 }
 
 button.secondary,
 .mode-switch button,
 .view-nav button {
-  color: #17312b;
-  background: #e6f0bb;
+  color: #20515b;
+  background: #e9f8fb;
 }
 
 button.secondary:hover,
@@ -56,7 +56,7 @@ button.secondary:hover,
 .view-nav button:hover,
 .view-nav button.active {
   color: #ffffff;
-  background: #5f7f1f;
+  background: #0f9db5;
 }
 
 input,
@@ -66,7 +66,7 @@ textarea {
   border: 1px solid #adc6bd;
   border-radius: 8px;
   padding: 0.75rem 0.85rem;
-  color: #17312b;
+  color: #182c30;
   background: #ffffff;
 }
 
@@ -143,23 +143,34 @@ p {
 .brand-block p:not(.eyebrow) {
   max-width: 680px;
   margin: 0;
-  color: #40534e;
+  color: #557077;
 }
 
 .book-card,
 .user-card {
-  border: 1px solid rgba(23, 49, 43, 0.14);
+  border: 1px solid rgba(15, 157, 181, 0.16);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 16px 36px rgba(23, 49, 43, 0.08);
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(24, 44, 48, 0.08);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.book-card:hover,
+.user-card:hover {
+  border-color: rgba(15, 157, 181, 0.42);
+  box-shadow: 0 20px 46px rgba(24, 44, 48, 0.12);
+  transform: translateY(-2px);
 }
 
 .account-strip,
 .auth-panel {
   display: grid;
   gap: 1rem;
-  border-left: 4px solid #137f68;
-  background: rgba(255, 255, 255, 0.62);
+  border-left: 4px solid #0f9db5;
+  background: rgba(255, 255, 255, 0.82);
   padding: 1.2rem;
 }
 
@@ -191,7 +202,7 @@ p {
   align-items: center;
   margin: 0 0 20px;
   padding: 0.7rem 0;
-  background: rgba(247, 249, 243, 0.92);
+  background: rgba(247, 251, 252, 0.92);
   backdrop-filter: blur(8px);
 }
 
@@ -204,12 +215,12 @@ p {
   border-radius: 8px;
   margin: 0 0 1rem;
   padding: 0.85rem 1rem;
-  background: #e9f5f0;
+  background: #e9f8fb;
   font-weight: 700;
 }
 
 .status.success {
-  background: #e7f4c8;
+  background: #ecf8d6;
 }
 
 .status.error {
@@ -232,7 +243,7 @@ p {
 }
 
 .panel {
-  border-top: 1px solid rgba(23, 49, 43, 0.16);
+  border-top: 1px solid rgba(15, 157, 181, 0.18);
   padding: 1.25rem;
 }
 
@@ -249,14 +260,14 @@ p {
 
 .eyebrow {
   margin: 0;
-  color: #b3261e;
+  color: #0f9db5;
   font-size: 0.8rem;
   font-weight: 900;
   text-transform: uppercase;
 }
 
 .muted {
-  color: #60716c;
+  color: #647c83;
 }
 
 .form {
@@ -301,6 +312,21 @@ p {
 .check-row input {
   width: 18px;
   height: 18px;
+}
+
+.genre-chip {
+  border: 1px solid #cfeaf0;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  color: #20515b;
+  background: #f4fbfc;
+  font-weight: 800;
+}
+
+.genre-chip:has(input:checked) {
+  border-color: #0f9db5;
+  color: #087f95;
+  background: #e4f8fb;
 }
 
 .book-grid {
@@ -379,8 +405,18 @@ p {
 }
 
 .tag {
-  color: #17312b;
-  background: #f4df78;
+  border: 1px solid #9de2ee;
+  border-radius: 999px;
+  padding: 0.45rem 0.75rem;
+  color: #087f95;
+  background: #e7fbff;
+  font-size: 0.92rem;
+}
+
+.tag::before {
+  content: "#";
+  margin-right: 0.08rem;
+  color: #12a8bf;
 }
 
 .list-item {
@@ -392,6 +428,30 @@ p {
 .list-item.compact {
   display: grid;
   gap: 0.4rem;
+}
+
+.empty-state {
+  display: grid;
+  justify-items: start;
+  gap: 0.65rem;
+  border: 1px dashed #abdde6;
+  border-radius: 8px;
+  margin-top: 1rem;
+  padding: 1.2rem;
+  background: #f7fdfe;
+}
+
+.empty-state h3,
+.empty-state p {
+  margin: 0;
+}
+
+.empty-state p {
+  color: #647c83;
+}
+
+.compact-empty {
+  padding: 1rem;
 }
 
 .user-grid {
@@ -439,8 +499,23 @@ p {
     min-height: 220px;
   }
 
+  .view-nav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.9rem;
+  }
+
+  .view-nav button {
+    flex: 0 0 auto;
+  }
+
   .book-detail,
   .book-card {
+    grid-template-columns: 1fr;
+  }
+
+  .book-grid,
+  .user-grid {
     grid-template-columns: 1fr;
   }
 
@@ -454,5 +529,14 @@ p {
 
   .meta-list {
     grid-template-columns: 1fr;
+  }
+
+  .actions,
+  .tag-row {
+    align-items: stretch;
+  }
+
+  .actions button {
+    width: 100%;
   }
 }

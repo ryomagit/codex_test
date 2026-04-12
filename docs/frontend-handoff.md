@@ -26,14 +26,6 @@ Response:
 {"status":"ok"}
 ```
 
-### GET /api/hello
-
-Response:
-
-```json
-{"message":"Hello from Java API"}
-```
-
 ## Vite proxy
 
 Vue + Vite 側では、開発時に API へ proxy します。

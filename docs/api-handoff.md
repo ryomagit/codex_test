@@ -37,12 +37,6 @@ API はデフォルトで `http://localhost:8080` に起動します。
 {"status":"ok"}
 ```
 
-### GET /api/hello
-
-```json
-{"message":"Hello from Java API"}
-```
-
 ## Next API scope
 
 書籍管理 API は `feature/db` が GitHub 上で `develop` に merge された後に実装します。

@@ -38,16 +38,17 @@ public final class FavoriteRepository {
     return jpa.read(
         entityManager -> {
           QFavoriteEntity favorite = QFavoriteEntity.favoriteEntity;
-          return new JPAQueryFactory(entityManager)
+          List<Long> bookIds =
+              new JPAQueryFactory(entityManager)
                   .select(favorite.bookId)
                   .from(favorite)
                   .where(favorite.userId.eq(userId))
                   .orderBy(favorite.createdAt.desc())
-                  .fetch()
-                  .stream()
-                  .map(bookRepository::findById)
-                  .flatMap(java.util.Optional::stream)
-                  .toList();
+                  .fetch();
+          return bookIds.stream()
+              .map(bookRepository::findById)
+              .flatMap(java.util.Optional::stream)
+              .toList();
         });
   }
 }

@@ -6,7 +6,6 @@ import com.example.api.resource.AuthResource;
 import com.example.api.resource.BookResource;
 import com.example.api.resource.GenreResource;
 import com.example.api.resource.HealthResource;
-import com.example.api.resource.HelloResource;
 import com.example.api.resource.MeResource;
 import com.example.api.resource.RecommendationListResource;
 import com.example.api.resource.UserResource;
@@ -14,7 +13,6 @@ import com.example.api.service.AuthService;
 import com.example.api.service.BookService;
 import com.example.api.service.FavoriteService;
 import com.example.api.service.GenreService;
-import com.example.api.service.GreetingService;
 import com.example.api.service.RecommendationService;
 import com.example.api.service.ReviewService;
 import com.example.api.service.UserService;
@@ -29,7 +27,6 @@ public final class AppConfig {
 
   public static ResourceConfig create() {
     Injector injector = Guice.createInjector(new ApiModule());
-    GreetingService greetingService = injector.getInstance(GreetingService.class);
     AuthService authService = injector.getInstance(AuthService.class);
     UserService userService = injector.getInstance(UserService.class);
     BookService bookService = injector.getInstance(BookService.class);
@@ -41,7 +38,6 @@ public final class AppConfig {
     return new ResourceConfig()
         .register(JacksonFeature.class)
         .register(HealthResource.class)
-        .register(HelloResource.class)
         .register(AuthResource.class)
         .register(UserResource.class)
         .register(BookResource.class)
@@ -54,7 +50,6 @@ public final class AppConfig {
             new AbstractBinder() {
               @Override
               protected void configure() {
-                bind(greetingService).to(GreetingService.class);
                 bind(authService).to(AuthService.class);
                 bind(userService).to(UserService.class);
                 bind(bookService).to(BookService.class);

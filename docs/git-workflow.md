@@ -2,43 +2,41 @@
 
 ## Branches
 
-- `main`: 安定版を置くブランチです。
-- `develop`: 開発中の変更を統合するブランチです。
-- `feature/*`: 機能単位の作業ブランチです。
+- `main`: 安定版を置くブランチ。
+- `develop`: 開発中の変更を統合するブランチ。
+- `feature/*` または `codex/*`: 機能・作業単位のブランチ。
 
 ## Basic flow
 
 ```bash
-git switch develop
-git pull
-git switch -c feature/<name>
+git fetch origin
+git switch -c codex/<task-name> origin/develop
 ```
 
-作業後は GitHub Pull Request を作成し、`feature/<name>` から `develop` に merge します。
-ローカルで PR merge 相当の merge は行わず、GitHub 上の PR merge を正とします。
+作業後は GitHub Pull Request を作成し、作業ブランチから `develop` に merge する。ローカルで PR merge 相当の merge は行わず、GitHub 上の PR merge を正とする。
 
-## Project startup order
+`develop` が別 worktree で checkout 済みの場合は、無理に `git switch develop` せず、`origin/develop` を起点に作業ブランチを直接作る。
 
-1. `main` で初回コミットを作成する。
-2. `develop` を作成する。
-3. `feature/api` で最小 API を実装し、`develop` に PR / merge する。
-4. `feature/db` で MySQL + Docker Compose の DB 基盤を実装し、`develop` に PR / merge する。
-5. DB 基盤 merge 後、`feature/api` 系ブランチで書籍管理 API を実装し、`develop` に PR / merge する。
-6. 書籍管理 API merge 後、`feature/front` でフロントエンドを実装し、`develop` に PR / merge する。
+## Completed project milestones
 
-## Session boundaries
+1. `main` で初回コミットを作成済み。
+2. `develop` を作成済み。
+3. 最小 API 基盤を GitHub PR 経由で `develop` に merge 済み。
+4. MySQL + Docker Compose の DB 基盤を GitHub PR 経由で `develop` に merge 済み。
+5. EclipseLink JPA を使う書籍管理 API を GitHub PR 経由で `develop` に merge 済み。
+6. Vue.js + Vite フロントエンドを GitHub PR 経由で `develop` に merge 済み。
 
-- Session 1: `main` で Git 初期化と初回コミット。
-- Session 2: `develop` 作成と `feature/api` 実装、PR 作成準備。
-- Session 3: GitHub 上で `feature/api` が merge 済みになった後、`develop` を pull して確認。
-- Session 4: 別セッションで `develop` から `feature/db` を作成し、`db/` 配下に MySQL + Docker Compose の DB 基盤を実装。
-- Session 5: GitHub 上で `feature/db` が merge 済みになった後、書籍管理 API を実装。
-- Session 6: 書籍管理 API が merge 済みになった後、`develop` から `feature/front` を作成し、フロントエンドを実装。
+## Current docs flow
+
+docs 整備のような横断的な変更も、直接 `develop` へ commit しない。
+
+```bash
+git fetch origin
+git switch -c codex/docs-project-overview origin/develop
+```
+
+変更後は差分確認と必要な検証を行い、Pull Request で `develop` へ提案する。
 
 ## Important rule
 
-`feature/api` 完了後は、ローカルで `develop` に merge しません。
-GitHub 上で `feature/api` から `develop` への Pull Request を作成し、PR merge 後に次セッションで `develop` を最新化します。
-
-同じく `feature/db`、書籍管理 API 用ブランチ、`feature/front` もローカルで `develop` に merge しません。
-GitHub 上の Pull Request merge を正とします。
+`feature/api`、`feature/db`、書籍管理 API 用ブランチ、`feature/front`、`codex/*` はローカルで `develop` に merge しない。GitHub 上の Pull Request merge を正とする。

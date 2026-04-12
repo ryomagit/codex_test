@@ -18,6 +18,8 @@
 
 - API 技術要素は Java 17+、Jersey、Google Guice、Grizzly から変更しない。
 - API の実行とテストはローカルの `gradle` コマンドではなく、必ず `./gradlew` を使う。
+- API の DB アクセスは EclipseLink JPA を使い、複雑な集計・結合クエリでは QueryDSL を使う。
+- Java ファイル編集後は google-java-format を Spotless 経由で適用する。
 - DB は MySQL + Docker Compose を使う。
 - DB 基盤は `feature/db` で作業し、DB 関連ファイルは `db/` 配下に置く。
 - 書籍情報取得元は Google Books API とする。

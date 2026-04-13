@@ -19,6 +19,19 @@ const reviewForm = reactive({
   body: '',
 })
 const userLookupId = ref('')
+const messageScopes = [
+  'global',
+  'auth',
+  'search',
+  'detail',
+  'library',
+  'ranking',
+  'reviews',
+  'people',
+]
+const scopedMessages = Object.fromEntries(
+  messageScopes.map((scope) => [scope, { text: '', tone: '' }]),
+)
 const state = reactive({
   user: null,
   genres: [],
@@ -33,6 +46,7 @@ const state = reactive({
   loading: '',
   notice: '',
   error: '',
+  messages: scopedMessages,
 })
 
 const isLoggedIn = computed(() => Boolean(state.user))
@@ -72,18 +86,44 @@ async function api(path, options = {}) {
   return data
 }
 
-async function run(label, action, successMessage = '') {
-  state.loading = label
+function messageScope(scope) {
+  return messageScopes.includes(scope) ? scope : 'global'
+}
+
+function clearMessage(scope) {
+  const current = state.messages[messageScope(scope)]
+  current.text = ''
+  current.tone = ''
+}
+
+function setMessage(scope, tone, text) {
+  const current = state.messages[messageScope(scope)]
+  current.text = text
+  current.tone = tone
+}
+
+function clearGlobalMessage() {
   state.error = ''
   state.notice = ''
+  clearMessage('global')
+}
+
+async function run(label, action, successMessage = '', scope = 'global') {
+  const currentScope = messageScope(scope)
+  state.loading = label
+  clearGlobalMessage()
+  clearMessage(currentScope)
   try {
     const result = await action()
     if (successMessage) {
-      state.notice = successMessage
+      setMessage(currentScope, 'success', successMessage)
     }
     return result
   } catch (error) {
-    state.error = error.message
+    setMessage(currentScope, 'error', error.message)
+    if (currentScope === 'global') {
+      state.error = error.message
+    }
     return null
   } finally {
     state.loading = ''
@@ -97,6 +137,7 @@ async function loadMe() {
   } catch (error) {
     state.user = null
     if (error.status !== 401) {
+      setMessage('global', 'error', error.message)
       state.error = error.message
     }
   } finally {
@@ -105,14 +146,15 @@ async function loadMe() {
 }
 
 async function loadGenres() {
-  state.genres = (await run('genres', () => api('/api/genres'))) ?? []
+  state.genres = (await run('genres', () => api('/api/genres'), '', 'global')) ?? []
   if (!state.selectedGenreId && state.genres.length > 0) {
     state.selectedGenreId = String(state.genres[0].id)
   }
 }
 
 async function loadFeaturedUsers() {
-  state.featuredUsers = (await run('featuredUsers', () => api('/api/users/featured'))) ?? []
+  state.featuredUsers =
+    (await run('featuredUsers', () => api('/api/users/featured'), '', 'people')) ?? []
 }
 
 async function submitAuth() {
@@ -134,8 +176,9 @@ async function submitAuth() {
       api(endpoint, {
         method: 'POST',
         body: JSON.stringify(payload),
-      }),
+    }),
     authMode.value === 'register' ? '登録しました。' : 'ログインしました。',
+    'auth',
   )
   if (result?.user) {
     state.user = result.user
@@ -151,8 +194,9 @@ async function logout() {
     () =>
       api('/api/auth/logout', {
         method: 'POST',
-      }),
+    }),
     'ログアウトしました。',
+    'auth',
   )
   state.user = null
   state.favorites = []
@@ -161,8 +205,12 @@ async function logout() {
 
 async function searchBooks() {
   state.searchResults =
-    (await run('search', () => api(`/api/books/search?q=${encodeURIComponent(bookSearch.q)}`))) ??
-    []
+    (await run(
+      'search',
+      () => api(`/api/books/search?q=${encodeURIComponent(bookSearch.q)}`),
+      '',
+      'search',
+    )) ?? []
 }
 
 function bookPayload(book) {
@@ -193,15 +241,19 @@ async function saveBook(book) {
         method: 'POST',
         body: JSON.stringify(bookPayload(book)),
       }),
-    '書籍を保存しました。',
+    '',
+    'search',
   )
   if (saved) {
     await selectBook(saved)
+    setMessage('detail', 'success', '書籍を保存しました。')
   }
 }
 
 async function selectBook(book) {
-  const detail = book.id ? await run('book', () => api(`/api/books/${book.id}`)) : null
+  const detail = book.id
+    ? await run('book', () => api(`/api/books/${book.id}`), '', 'detail')
+    : null
   state.selectedBook = detail ?? book
   activeView.value = 'detail'
   await loadReviews()
@@ -215,19 +267,20 @@ async function loadReviews() {
     return
   }
   state.reviews =
-    (await run('reviews', () => api(`/api/books/${state.selectedBook.id}/reviews`))) ?? []
+    (await run('reviews', () => api(`/api/books/${state.selectedBook.id}/reviews`), '', 'reviews')) ??
+    []
 }
 
 async function loadFavorites() {
   if (!state.user) {
     return
   }
-  state.favorites = (await run('favorites', () => api('/api/me/favorites'))) ?? []
+  state.favorites = (await run('favorites', () => api('/api/me/favorites'), '', 'library')) ?? []
 }
 
 async function favoriteBook(book) {
   if (!book?.id) {
-    state.error = '先に書籍を保存してください。'
+    setMessage('detail', 'error', '先に書籍を保存してください。')
     return
   }
   await run(
@@ -235,8 +288,9 @@ async function favoriteBook(book) {
     () =>
       api(`/api/books/${book.id}/favorite`, {
         method: 'POST',
-      }),
+    }),
     'お気に入りに追加しました。',
+    'detail',
   )
   await loadFavorites()
 }
@@ -250,15 +304,16 @@ async function unfavoriteBook(book) {
     () =>
       api(`/api/books/${book.id}/favorite`, {
         method: 'DELETE',
-      }),
+    }),
     'お気に入りから削除しました。',
+    'detail',
   )
   await loadFavorites()
 }
 
 async function submitReview() {
   if (!state.selectedBook?.id) {
-    state.error = '先に保存済みの書籍を選択してください。'
+    setMessage('reviews', 'error', '先に保存済みの書籍を選択してください。')
     return
   }
   await run(
@@ -271,9 +326,13 @@ async function submitReview() {
           body: reviewForm.body,
         }),
       }),
-    'レビューを保存しました。',
+    '',
+    'reviews',
   )
-  await loadReviews()
+  if (state.messages.reviews.tone !== 'error') {
+    await loadReviews()
+    setMessage('reviews', 'success', 'レビューを保存しました。')
+  }
 }
 
 async function deleteReview() {
@@ -286,9 +345,13 @@ async function deleteReview() {
       api(`/api/books/${state.selectedBook.id}/review`, {
         method: 'DELETE',
       }),
-    'レビューを削除しました。',
+    '',
+    'reviews',
   )
-  await loadReviews()
+  if (state.messages.reviews.tone !== 'error') {
+    await loadReviews()
+    setMessage('reviews', 'success', 'レビューを削除しました。')
+  }
 }
 
 async function loadRanking() {
@@ -296,7 +359,12 @@ async function loadRanking() {
     return
   }
   state.ranking =
-    (await run('ranking', () => api(`/api/genres/${state.selectedGenreId}/ranking`))) ?? []
+    (await run(
+      'ranking',
+      () => api(`/api/genres/${state.selectedGenreId}/ranking`),
+      '',
+      'ranking',
+    )) ?? []
 }
 
 async function loadUser(userId) {
@@ -304,7 +372,7 @@ async function loadUser(userId) {
   if (!id) {
     return
   }
-  state.selectedUser = await run('user', () => api(`/api/users/${id}`))
+  state.selectedUser = await run('user', () => api(`/api/users/${id}`), '', 'people')
 }
 
 async function followUser(user) {
@@ -314,10 +382,14 @@ async function followUser(user) {
       api(`/api/users/${user.id}/follow`, {
         method: 'POST',
       }),
-    'フォローしました。',
+    '',
+    'people',
   )
-  await loadFeaturedUsers()
-  await loadUser(user.id)
+  if (state.messages.people.tone !== 'error') {
+    await loadFeaturedUsers()
+    await loadUser(user.id)
+    setMessage('people', 'success', 'フォローしました。')
+  }
 }
 
 async function unfollowUser(user) {
@@ -327,10 +399,14 @@ async function unfollowUser(user) {
       api(`/api/users/${user.id}/follow`, {
         method: 'DELETE',
       }),
-    'フォローを解除しました。',
+    '',
+    'people',
   )
-  await loadFeaturedUsers()
-  await loadUser(user.id)
+  if (state.messages.people.tone !== 'error') {
+    await loadFeaturedUsers()
+    await loadUser(user.id)
+    setMessage('people', 'success', 'フォローを解除しました。')
+  }
 }
 
 async function searchByTag(tag) {
@@ -404,8 +480,12 @@ onMounted(async () => {
     </nav>
 
     <p v-if="state.loading" class="status">読み込み中...</p>
-    <p v-if="state.notice" class="status success">{{ state.notice }}</p>
-    <p v-if="state.error" class="status error">{{ state.error }}</p>
+    <p
+      v-if="state.messages.global.text"
+      :class="['status', state.messages.global.tone]"
+    >
+      {{ state.messages.global.text }}
+    </p>
 
     <section v-if="authPanelOpen && !state.user" class="auth-panel">
       <div class="panel-heading row-heading">
@@ -415,6 +495,12 @@ onMounted(async () => {
         </div>
         <button type="button" class="secondary" @click="authPanelOpen = false">閉じる</button>
       </div>
+      <p
+        v-if="state.messages.auth.text"
+        :class="['inline-message', state.messages.auth.tone]"
+      >
+        {{ state.messages.auth.text }}
+      </p>
       <div class="auth-layout">
         <div class="mode-switch">
           <button :class="{ active: authMode === 'login' }" type="button" @click="authMode = 'login'">
@@ -476,6 +562,12 @@ onMounted(async () => {
           </fieldset>
           <button type="submit">検索する</button>
         </form>
+        <p
+          v-if="state.messages.search.text"
+          :class="['inline-message', state.messages.search.tone]"
+        >
+          {{ state.messages.search.text }}
+        </p>
       </div>
 
       <div class="panel">
@@ -576,6 +668,12 @@ onMounted(async () => {
                 ログインして保存
               </button>
             </div>
+            <p
+              v-if="state.messages.detail.text"
+              :class="['inline-message', state.messages.detail.tone]"
+            >
+              {{ state.messages.detail.text }}
+            </p>
           </div>
         </div>
       </div>
@@ -585,6 +683,12 @@ onMounted(async () => {
           <p class="eyebrow">Reviews</p>
           <h2>レビュー</h2>
         </div>
+        <p
+          v-if="state.messages.reviews.text"
+          :class="['inline-message', state.messages.reviews.tone]"
+        >
+          {{ state.messages.reviews.text }}
+        </p>
         <form v-if="isLoggedIn" class="form" @submit.prevent="submitReview">
           <label>
             星評価
@@ -631,6 +735,12 @@ onMounted(async () => {
         <button v-else type="button" class="secondary" @click="showAuth('login')">
           ログインして一覧を表示
         </button>
+        <p
+          v-if="state.messages.library.text"
+          :class="['inline-message', state.messages.library.tone]"
+        >
+          {{ state.messages.library.text }}
+        </p>
         <article v-for="book in state.favorites" :key="book.id" class="list-item compact">
           <h3>{{ book.title }}</h3>
           <p>{{ joinAuthors(book) }}</p>
@@ -659,6 +769,12 @@ onMounted(async () => {
           </label>
           <button type="submit">表示</button>
         </form>
+        <p
+          v-if="state.messages.ranking.text"
+          :class="['inline-message', state.messages.ranking.tone]"
+        >
+          {{ state.messages.ranking.text }}
+        </p>
         <article v-for="row in state.ranking" :key="row.book.id" class="list-item compact">
           <h3>{{ row.book.title }}</h3>
           <p>
@@ -686,6 +802,12 @@ onMounted(async () => {
           <button type="submit">表示</button>
         </form>
       </div>
+      <p
+        v-if="state.messages.people.text"
+        :class="['inline-message', state.messages.people.tone]"
+      >
+        {{ state.messages.people.text }}
+      </p>
       <div v-if="hasFeaturedUsers" class="user-grid">
         <article v-for="user in state.featuredUsers" :key="user.id" class="user-card">
           <img v-if="user.avatarUrl" :src="user.avatarUrl" :alt="user.displayName" />
